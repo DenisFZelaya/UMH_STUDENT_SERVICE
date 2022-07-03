@@ -27,6 +27,8 @@ builder.Services.AddEntityFrameworkNpgsql()
 // Registrer interfaces
 builder.Services.AddScoped<ILlUser, LlUser>();
 builder.Services.AddScoped<IBlUser, BlUser>();
+builder.Services.AddScoped<IBlUniversity, BlUniversity>();
+builder.Services.AddScoped<ILlUniversity, LlUniversity>();
 
 var app = builder.Build();
 

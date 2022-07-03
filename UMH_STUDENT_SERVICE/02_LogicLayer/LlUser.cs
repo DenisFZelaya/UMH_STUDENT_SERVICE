@@ -11,6 +11,7 @@ namespace UMH_STUDENT_SERVICE._02_LogicLayer
     {
         CustomJsonResult RegisterUser(string tokenUniversity, User user);
         CustomJsonResult LoginUser(string encodingCredential);
+        CustomJsonResult UpdatePassword(string encodingCredential, string newPassword);
     }
     public class LlUser : ILlUser
     {
@@ -25,6 +26,12 @@ namespace UMH_STUDENT_SERVICE._02_LogicLayer
         {
             // Funcionality
             CustomJsonResult response = new CustomJsonResult();
+
+            if (_context.Users == null)
+            {
+                response.Error = ErrorMessages.NotFound;
+                return response;
+            }
 
             var encodingParams = encodingCredential.Replace("Basic ", "");
             var encodedTextBytes = Convert.FromBase64String(encodingParams);
@@ -88,13 +95,12 @@ namespace UMH_STUDENT_SERVICE._02_LogicLayer
                         campus = _context.Campuses.Where(c => c.Id.Equals(user.IdCampus)).FirstOrDefault(),
 
                     },
-                    token = encodingCredential+ConstantConfig.tokenUniversidad
+                    token = encodingCredential + ConstantConfig.tokenUniversidad
                 }
             };
 
             return response;
         }
-
         public CustomJsonResult RegisterUser(string tokenUniversity, User user)
         {
             // Funcionality
@@ -163,7 +169,10 @@ namespace UMH_STUDENT_SERVICE._02_LogicLayer
                 response.SuccesMessage = "User created sucessfully";
                 response.Result = new
                 {
-                    status = true
+                    createUserResponse = new
+                    {
+                        status = true
+                    }
                 };
                 return response;
             }
@@ -173,7 +182,78 @@ namespace UMH_STUDENT_SERVICE._02_LogicLayer
                 return response;
             }
         }
+        public CustomJsonResult UpdatePassword(string encodingCredential, string newPassword)
+        {
+            // Funcionality
+            CustomJsonResult response = new CustomJsonResult();
 
+            try
+            {
+                var encodingParams = encodingCredential.Replace("Basic ", "");
+                encodingParams = encodingParams.Replace(ConstantConfig.tokenUniversidad, "");
+                var encodedTextBytes = Convert.FromBase64String(encodingParams);
+                string plainText = Encoding.UTF8.GetString(encodedTextBytes);
+
+                string[] authUser = plainText.Split(":");
+                string accountParams = Security.SanitizeString(authUser[0]);
+                string passParams = Security.SanitizeString(authUser[1]);
+
+                User user = _context.Users.Where(c => c.NumberAcount.Equals(accountParams)).FirstOrDefault();
+
+                // Validate length newPassword
+                if(newPassword.Length < ConstantConfig.passwordLength)
+                {
+                    response.Error = "Password less than " + ConstantConfig.passwordLength;
+                    return response;
+                }
+
+                // If table no exist
+                if (user == null)
+                {
+                    response.Error = ErrorMessages.NotFound;
+                    return response;
+                }
+
+                // Password is correct
+                if (Security.DecodeHash(user.Password).Equals(passParams))
+                {
+                    user.Password = Security.EncodeHash(newPassword);
+                    _context.Entry(user).State = EntityState.Modified;
+
+                    try
+                    {
+                        _context.SaveChanges();
+                    }
+                    catch (DbUpdateConcurrencyException)
+                    {
+                        response.Error = ErrorMessages.NotFound;
+                        return response;
+                    }
+
+                    response.SuccesMessage = "UserPassword updated sucessfully";
+                    response.Result = new
+                    {
+                        updatePasswordResponse = new
+                        {
+                            status = true,
+                            token = encodingCredential + ConstantConfig.tokenUniversidad
+                        }
+                    };
+
+                    return response;
+                }
+                else
+                {
+                    response.Error = ErrorMessages.Unauthorized;
+                    return response;
+                }
+            }
+            catch (Exception ex)
+            {
+                response.Error = ex.Message;
+                return response;
+            }
+        }
         private bool UserExists(string id)
         {
             return (_context.Users?.Any(e => e.NumberAcount == id)).GetValueOrDefault();

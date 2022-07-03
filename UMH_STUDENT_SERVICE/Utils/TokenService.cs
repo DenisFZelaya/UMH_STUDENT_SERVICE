@@ -4,14 +4,23 @@
     {
         public static bool TokenUniversityValid(string tokenUniversity)
         {
-            if (tokenUniversity.Equals(ConstantConfig.tokenUniversidad))
+            try
             {
-                return true;
+                if (tokenUniversity.Equals(ConstantConfig.tokenUniversidad))
+                {
+                    return true;
+                }
+                else
+                {
+                    return false;
+                }
             }
-            else
+            catch (Exception)
             {
+
                 return false;
             }
+
         }
     }
 }

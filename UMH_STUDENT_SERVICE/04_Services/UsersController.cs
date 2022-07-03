@@ -43,54 +43,35 @@ namespace UMH_STUDENT_SERVICE.Controllers
             }
             catch (Exception ex)
             {
-
                 return BadRequest(ex);
             }
-
-
-            /**
-                if (_context.Users == null)
-                {
-                    return NotFound();
-                }
-                return new
-                {
-                    name = "Demos Zelaya"
-                };
-             */
         }
 
 
-        // PUT: api/Users/5
-        // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
-        [HttpPut("update-student/process{id}")]
-        public async Task<IActionResult> PutUser(string id, User user)
+        [HttpPut("update-password/process")]
+        public object PutPasswordUser([FromBody] string newPassword)
         {
-            if (id != user.NumberAcount)
+            try
             {
-                return BadRequest();
+                var result = _BlUsers.UpdatePassword(Request.Headers["Authorization"], newPassword);
+
+                if (!string.IsNullOrEmpty(result.Error))
+                {
+                    // Add table log
+                    return BadRequest(result);
+                }
+                return Ok(result);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex);
             }
 
             /**
              
             
 
-            _context.Entry(user).State = EntityState.Modified;
-
-            try
-            {
-                await _context.SaveChangesAsync();
-            }
-            catch (DbUpdateConcurrencyException)
-            {
-                if (!UserExists(id))
-                {
-                    return NotFound();
-                }
-                else
-                {
-                    throw;
-                }
+  }
             }
              */
 
